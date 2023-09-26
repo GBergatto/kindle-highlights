@@ -7,6 +7,7 @@ import sys
 LEN = int(sys.argv[1])
 SEPARATOR = "==========\n"
 OUT_DIR = "out"
+ANKI_FILE = "anki.txt"
 
 title_re = re.compile("^(.*)\((.*)\)$")
 meta_re = re.compile("^-\s*Your (\S+) (.*)Added on\s+(.+)$")
@@ -50,71 +51,106 @@ def parse_my_clippings():
             ctype, pos, _ = meta_match.groups()
             ctype = ctype.lower()
 
+            if ctype == "bookmark":
+                continue
+
             pos_match = re.findall(pos_re, pos)
             if len(pos_match)==0:
                 # TODO: log error to a log file
                 continue
-            start = int(pos_match[0][0])
-            end = None
-            # Highlights are the only type of clipping with a start and an end position
-            if ctype == "highlight":
-                end = int(pos_match[0][1])
 
             # create a dictionary representation of the clipping
             clipping_dict = dict()
             clipping_dict["ctype"] = ctype
             clipping_dict["body"] = body
-            clipping_dict["start"] = start
+            clipping_dict["start"] = int(pos_match[0][0])
             if ctype == "highlight":
-                clipping_dict["end"] = end
-
-            # classify clippings into highlights, anki words, notes and bookmarks
-            if ctype == "highlight":
-                if (len(body.split()) <= LEN):
-                    ctype = "anki"
+                clipping_dict["end"] = int(pos_match[0][1])
 
             # add the clipping to the corresponding book
             if title in books:
                 if ctype in books[title]:
                     books[title][ctype].append(clipping_dict)
-                else:
-                    # create a new list for this clipping type
-                    books[title][ctype] = [clipping_dict]
             else:
                 # create a new entry in the books dict
                 books[title] = dict()
                 books[title]["author"] = author
                 books[title]["subtitle"] = subtitle
-                books[title][ctype] = [clipping_dict]
+                books[title]["highlight"] = []
+                books[title]["note"] = []
+                books[title][ctype].append(clipping_dict)
 
         return books
 
+# separate short highlights without a note and add them to a single file
+def add_anki_words(title, highlights):
+    book_highlights = []
+    with open(f"{OUT_DIR}/{ANKI_FILE}", mode="a") as af:
+        print("\n#", title, file=af)
+        for h in highlights:
+            # highlights with less than LEN words and without a note are for Anki
+            if (len(h["body"].split()) <= LEN) and "note" not in h:
+                clean = h["body"].strip(".,:; (){}!?-'\"‘’“”«»").replace("’","'")
+                print(clean, file=af)
+            else:
+                book_highlights.append(h)
 
-# Create a single file in OUT_DIR with all Anki words separated by title
-def add_anki_words(title, words):
+    return book_highlights
+
+# connect notes to the corresponding highlights and sort by position
+def connect_notes_to_highlight(notes, highlights):
+    # sort on the starting position
+    notes = sorted(notes, key=lambda d: d["start"])
+    highlights = sorted(highlights, key=lambda d: d["start"])
+
+    s = 0
+    for note in notes:
+        for i in range(s, len(highlights)):
+            h = highlights[i]
+            # the note can be anywhere within its highlight
+            if (note["start"] >= h["start"] and note["start"] <= h["end"]):
+                # store the note inside the corresponding highlight
+                highlights[i]["note"] = note["body"]
+                s = i
+                break
+        else:
+            print("Error: no matching highlight found for note")
+            print(note)
+
+    return highlights
+
+
+def main():
+    # check that the output directory is present
     if not os.path.isdir(OUT_DIR):
         if os.path.isfile(OUT_DIR):
             os.remove(OUT_DIR)
         os.mkdir(OUT_DIR)
+    # delete temporary Anki file if already existing (left from previous run)
+    if os.path.isfile(f"{OUT_DIR}/{ANKI_FILE}"):
+        os.remove(f"{OUT_DIR}/{ANKI_FILE}")
 
-    with open(f"{OUT_DIR}/anki.txt", mode="a") as af:
-        print("\n#", title, file=af)
-        for w in words:
-            clean = w["body"].strip(".,:; (){}!?-'\"‘’“”«»").replace("’","'")
-            print(clean, file=af)
-
-
-def main():
+    # parse My Clippings.txt
     books = parse_my_clippings()
+
+    # convert clippings to Anki words and book notes
     for title, d in books.items():
-        # append Anki words to file
-        print(title)
-        if "anki" in d:
-            add_anki_words(title, d["anki"])
+        print(f"\n{title}")
+        highlights = d["highlight"]
 
         # match highlight to corresponding note
+        highlights = connect_notes_to_highlight(d["note"], d["highlight"])
 
-        # create book note
+        n_tot_highlights = len(highlights)
+
+        # separate words for Anki
+        highlights = add_anki_words(title, highlights)
+
+        n_book_highlights = len(highlights)
+        n_anki_highlights = n_tot_highlights - n_book_highlights
+        print(f"Added {n_anki_highlights} Anki words and {n_book_highlights} highlights")
+
+        # format book highlights for Obsidian
 
 
 if __name__ == "__main__":
