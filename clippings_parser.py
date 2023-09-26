@@ -90,7 +90,7 @@ def add_anki_words(title, highlights):
         for h in highlights:
             # highlights with less than LEN words and without a note are for Anki
             if (len(h["body"].split()) <= LEN) and "note" not in h:
-                clean = h["body"].strip(".,:; (){}!?-'\"‘’“”«»").replace("’","'")
+                clean = h["body"].strip(".,:; (){}!?—-'\"‘’“”«»").replace("’","'")
                 print(clean, file=af)
             else:
                 book_highlights.append(h)
@@ -118,6 +118,22 @@ def connect_notes_to_highlight(notes, highlights):
             print(note)
 
     return highlights
+
+
+# create a markdown file and print book highlights to it
+def create_book_note(title, highlights):
+    f_title = title.replace(" ", "_")
+    f_title =  "".join(x for x in f_title if (x.isalnum() or x == "_"))
+
+    with open(f"{OUT_DIR}/{f_title}.md", mode="w") as file:
+        for h in highlights:
+            body = h["body"][0].upper() + h["body"][1:].strip(" —-:")
+            body = re.sub("[\"‘’“”«»]", "\"", body)
+            formatted = f"> {body}\n"
+            if "note" in h:
+                note = h["note"][0].upper() + h["note"][1:]
+                formatted += f"\n{note}\n"
+            print(formatted, file=file)
 
 
 def main():
@@ -151,6 +167,7 @@ def main():
         print(f"Added {n_anki_highlights} Anki words and {n_book_highlights} highlights")
 
         # format book highlights for Obsidian
+        create_book_note(title, highlights)
 
 
 if __name__ == "__main__":
