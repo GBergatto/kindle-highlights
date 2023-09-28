@@ -30,7 +30,7 @@ def parse_my_clippings():
             # parse title, subtitle and author
             title_match = re.match(title_re, title_line) 
             if not title_match:
-                # TODO: log error to a log file
+                print(f"Error: cannot parse title. Skipping.\n'{title_line}'\n")
                 continue
 
             full_title, author = title_match.groups()
@@ -44,7 +44,7 @@ def parse_my_clippings():
             # parse type, position and date
             meta_match = re.match(meta_re, meta_line)
             if not meta_match:
-                # TODO: log error to a log file
+                print(f"Error: cannot parse metadata. Skipping.\n'{meta_line}'\n")
                 continue
 
             # date is not used
@@ -56,7 +56,7 @@ def parse_my_clippings():
 
             pos_match = re.findall(pos_re, pos)
             if len(pos_match)==0:
-                # TODO: log error to a log file
+                print(f"Error: cannot parse position. Skipping.\n'{pos}'\n")
                 continue
 
             # create a dictionary representation of the clipping
