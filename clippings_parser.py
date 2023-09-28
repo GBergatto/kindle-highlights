@@ -128,7 +128,8 @@ def create_book_note(title, highlights):
     with open(f"{OUT_DIR}/{f_title}.md", mode="w") as file:
         for h in highlights:
             body = h["body"][0].upper() + h["body"][1:].strip(" —-:")
-            body = re.sub("[\"‘’“”«»]", "\"", body)
+            body = re.sub("[“”«»]", "\"", body)
+            body = re.sub("[‘’]", "'", body)
             formatted = f"> {body}\n"
             if "note" in h:
                 note = h["note"][0].upper() + h["note"][1:]
