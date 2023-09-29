@@ -8,6 +8,7 @@ LEN = int(sys.argv[1])
 SEPARATOR = "==========\n"
 OUT_DIR = "out"
 ANKI_FILE = "anki.txt"
+CLIPPINGS_FILE = "My Clippings.txt"
 
 title_re = re.compile("^(.*)\((.*)\)$")
 meta_re = re.compile("^-\s*Your (\S+) (.*)Added on\s+(.+)$")
@@ -17,8 +18,9 @@ pos_re = re.compile("Location (\d+)(?:-(\d+)|)")
 def parse_my_clippings():
     books = dict()
 
-    with open("My Clippings.txt", mode="r", encoding="utf-8-sig") as cf:
+    with open(CLIPPINGS_FILE, mode="r", encoding="utf-8-sig") as cf:
         clippings = cf.read().split(SEPARATOR)[:-1]
+        book_clippings = dict()
 
         for c in clippings:
             split_c = c.split("\n")
@@ -40,6 +42,12 @@ def parse_my_clippings():
             subtitle = ""
             if (len(ft_split)>1):
                 subtitle = ft_split[1].strip()
+
+            # keep the clipping string for unfinished books
+            if title in book_clippings:
+                book_clippings[title].append(c)
+            else:
+                book_clippings[title] = [c]
 
             # parse type, position and date
             meta_match = re.match(meta_re, meta_line)
@@ -80,7 +88,52 @@ def parse_my_clippings():
                 books[title]["note"] = []
                 books[title][ctype].append(clipping_dict)
 
+        titles = list(reversed(books.keys()))
+        print(f"Books found in {CLIPPINGS_FILE}")
+        for i, t in enumerate(titles):
+            print(f"{i}. {t}")
+        print("Which one of them, if any, haven't you completed yet?")
+
+        # get the indexes of all uncompleted books
+        to_skip = []
+        valid = False
+        while not valid:
+            answer = input("Enter as a space-separated list of numbers: ").strip()
+
+            try:
+                indexes = [int(x) for x in answer.split()]
+                valid = True
+                for i in indexes:
+                    if (i < 0 or i >= len(books)):
+                        print(i, "is not a valid index.")
+                        valid = False
+
+                if not valid:
+                    print(f"All indexes must be between 0 and {len(books)-1}")
+                else:
+                    to_skip = [titles[x] for x in indexes]
+
+            except ValueError:
+                print("Invalid format.")
+
+        print("\n")
+        # do not parse clippings for uncompleted books
+        for t in titles:
+            if t in to_skip:
+                print(f"Skipped '{t}'")
+                del books[t]
+
+        # keep clippings of uncompleted books inside clipping file
+        with open(f"{OUT_DIR}/{CLIPPINGS_FILE}", mode="w") as ncf:
+            content = ""
+            for title, clipping in book_clippings.items():
+                if title in to_skip:
+                    content += SEPARATOR.join(clipping)
+            content += SEPARATOR
+            ncf.write(content)
+
         return books
+
 
 # separate short highlights without a note and add them to a single file
 def add_anki_words(title, highlights):
