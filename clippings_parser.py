@@ -4,11 +4,11 @@ import os
 import re
 import sys
 
-LEN = int(sys.argv[1])
 SEPARATOR = "==========\n"
-OUT_DIR = "out"
-ANKI_FILE = "anki.txt"
-CLIPPINGS_FILE = "My Clippings.txt"
+LEN = int(sys.argv[1])
+OUT_DIR = sys.argv[2]
+ANKI_FILE = sys.argv[3]
+CLIPPINGS_FILE = sys.argv[4]
 
 title_re = re.compile("^(.*)\((.*)\)$")
 meta_re = re.compile("^-\s*Your (\S+) (.*)Added on\s+(.+)$")
@@ -116,7 +116,7 @@ def parse_my_clippings():
             except ValueError:
                 print("Invalid format.")
 
-        print("\n")
+        print()
         # do not parse clippings for uncompleted books
         for t in titles:
             if t in to_skip:
