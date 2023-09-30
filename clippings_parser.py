@@ -129,7 +129,9 @@ def parse_my_clippings():
             for title, clipping in book_clippings.items():
                 if title in to_skip:
                     content += SEPARATOR.join(clipping)
-            content += SEPARATOR
+            if content:
+                # don't add separator to an empty file
+                content += SEPARATOR
             ncf.write(content)
 
         return books
@@ -180,7 +182,7 @@ def create_book_note(title, highlights):
 
     with open(f"{OUT_DIR}/{f_title}.md", mode="w") as file:
         for h in highlights:
-            body = h["body"][0].upper() + h["body"][1:].strip(" —-:")
+            body = h["body"][0].upper() + h["body"][1:].strip(" —-:,")
             body = re.sub("[“”«»]", "\"", body)
             body = re.sub("[‘’]", "'", body)
             formatted = f"> {body}\n"
