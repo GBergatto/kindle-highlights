@@ -9,11 +9,21 @@ while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 SCRIPT_DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 
-OBSIDIAN_ROOT=/home/gb/Dropbox/Obsidian/Cervello
-WORDS_FILE=/home/gb/Documents/wordsFromKindle.txt
+# directory inside $SCRIPT_DIR for output of the parser
 OUT_DIR=out
+# temporary file where the parser adds new words
 ANKI_FILE=anki.txt
+# clippings file inside $SCRIPT_DIR (renamed to avoid issues with the space)
 CLIPPINGS_FILE=My_Clippings.txt
+
+### Edit to adapt the script to your filesystem
+
+# directory in your Obsidian Vault where you want book notes to be copied to
+OBSIDIAN_ROOT=/home/gb/Dropbox/Obsidian/Cervello
+# file that contains all new words sorted by book
+WORDS_FILE=/home/gb/Documents/wordsFromKindle.txt
+
+###
 
 # mount Kindle
 KINDLE_DIR=$(udisksctl mount -b /dev/sda1 | cut -d' ' -f4)
@@ -23,7 +33,7 @@ if [[ -n $KINDLE_DIR ]]; then
 
   if [ -f $KINDLE_DIR/documents/My\ Clippings.txt ];
   then
-    # move My Clipping.txt to DIR
+    # move My Clipping.txt to SCRIPT_DIR
     cp $KINDLE_DIR/documents/My\ Clippings.txt $SCRIPT_DIR/$CLIPPINGS_FILE
 
     # run Python parser
