@@ -5,6 +5,7 @@ import re
 import sys
 
 SEPARATOR = "==========\n"
+SCRIPT_DIR = "/".join(sys.argv[0].split("/")[:-1])
 LEN = int(sys.argv[1])
 OUT_DIR = sys.argv[2]
 ANKI_FILE = sys.argv[3]
@@ -18,7 +19,7 @@ pos_re = re.compile("Location (\d+)(?:-(\d+)|)")
 def parse_my_clippings():
     books = dict()
 
-    with open(CLIPPINGS_FILE, mode="r", encoding="utf-8-sig") as cf:
+    with open(f"{SCRIPT_DIR}/{CLIPPINGS_FILE}", mode="r", encoding="utf-8-sig") as cf:
         clippings = cf.read().split(SEPARATOR)[:-1]
         book_clippings = dict()
 
@@ -124,7 +125,7 @@ def parse_my_clippings():
                 del books[t]
 
         # keep clippings of uncompleted books inside clipping file
-        with open(f"{OUT_DIR}/{CLIPPINGS_FILE}", mode="w") as ncf:
+        with open(f"{SCRIPT_DIR}/{OUT_DIR}/{CLIPPINGS_FILE}", mode="w") as ncf:
             content = ""
             for title, clipping in book_clippings.items():
                 if title in to_skip:
@@ -140,7 +141,7 @@ def parse_my_clippings():
 # separate short highlights without a note and add them to a single file
 def add_anki_words(title, highlights):
     book_highlights = []
-    with open(f"{OUT_DIR}/{ANKI_FILE}", mode="a") as af:
+    with open(f"{SCRIPT_DIR}/{OUT_DIR}/{ANKI_FILE}", mode="a") as af:
         print("\n#", title, file=af)
         for h in highlights:
             # highlights with less than LEN words and without a note are for Anki
@@ -180,7 +181,7 @@ def create_book_note(title, highlights):
     f_title = title.replace(" ", "_")
     f_title =  "".join(x for x in f_title if (x.isalnum() or x == "_"))
 
-    with open(f"{OUT_DIR}/{f_title}.md", mode="w") as file:
+    with open(f"{SCRIPT_DIR}/{OUT_DIR}/{f_title}.md", mode="w") as file:
         for h in highlights:
             body = h["body"][0].upper() + h["body"][1:].strip(" —-:,")
             body = re.sub("[“”«»]", "\"", body)
