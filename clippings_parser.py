@@ -195,13 +195,13 @@ def create_book_note(title, highlights):
 
 def main():
     # check that the output directory is present
-    if not os.path.isdir(OUT_DIR):
-        if os.path.isfile(OUT_DIR):
-            os.remove(OUT_DIR)
-        os.mkdir(OUT_DIR)
+    if not os.path.isdir(f"{SCRIPT_DIR}/{OUT_DIR}"):
+        if os.path.isfile(f"{SCRIPT_DIR}/{OUT_DIR}"):
+            os.remove(f"{SCRIPT_DIR}/{OUT_DIR}")
+        os.mkdir(f"{SCRIPT_DIR}/{OUT_DIR}")
     # delete temporary Anki file if already existing (left from previous run)
-    if os.path.isfile(f"{OUT_DIR}/{ANKI_FILE}"):
-        os.remove(f"{OUT_DIR}/{ANKI_FILE}")
+    if os.path.isfile(f"{SCRIPT_DIR}/{OUT_DIR}/{ANKI_FILE}"):
+        os.remove(f"{SCRIPT_DIR}/{OUT_DIR}/{ANKI_FILE}")
 
     # parse My Clippings.txt
     books = parse_my_clippings()
