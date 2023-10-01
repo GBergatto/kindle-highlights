@@ -9,7 +9,6 @@ while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 SCRIPT_DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
 
-KINDLE_DIR=/run/media/gb/Kindle
 OBSIDIAN_ROOT=/home/gb/Dropbox/Obsidian/Cervello
 WORDS_FILE=/home/gb/Documents/wordsFromKindle.txt
 OUT_DIR=out
@@ -17,7 +16,9 @@ ANKI_FILE=anki.txt
 CLIPPINGS_FILE=My_Clippings.txt
 
 # mount Kindle
-if udisksctl mount -b /dev/sda1; then
+KINDLE_DIR=$(udisksctl mount -b /dev/sda1 | cut -d' ' -f4)
+if [[ -n $KINDLE_DIR ]]; then
+  echo "Mounted Kindle at $KINDLE_DIR"
   echo
 
   if [ -f $KINDLE_DIR/documents/My\ Clippings.txt ];
